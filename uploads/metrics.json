@@ -1,0 +1,12 @@
+{
+  "total_requests": 3,
+  "successful_requests": 3,
+  "failed_requests": 0,
+  "average_processing_time": 0.218484,
+  "model_accuracy": 0.75,
+  "processing_times": [
+    0.248815,
+    0.236872,
+    0.169765
+  ]
+}

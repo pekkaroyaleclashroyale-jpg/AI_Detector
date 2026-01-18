@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Detector</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 800px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            color: #666;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 60px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        .upload-area:hover {
+            background: #f8f9ff;
+            border-color: #764ba2;
+        }
+        
+        #fileInput {
+            display: none;
+        }
+        
+        .preview {
+            max-width: 100%;
+            max-height: 300px;
+            border-radius: 10px;
+            display: none;
+            margin: 20px auto;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 16px;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 10px;
+        }
+        
+        button:hover {
+            background: #764ba2;
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            display: none;
+            margin-top: 30px;
+            padding: 30px;
+            border-radius: 15px;
+        }
+        
+        .real { background: #d4edda; border: 2px solid #c3e6cb; }
+        .ai { background: #f8d7da; border: 2px solid #f5c6cb; }
+        
+        .progress-bar {
+            height: 30px;
+            background: #e2e8f0;
+            border-radius: 15px;
+            margin: 20px 0;
+            overflow: hidden;
+            display: flex;
+        }
+        
+        .real-bar { height: 100%; background: #48bb78; transition: width 1s; }
+        .ai-bar { height: 100%; background: #f56565; transition: width 1s; }
+        
+        .watermark {
+            font-size: 1.5em;
+            font-weight: bold;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1><i class="fas fa-robot"></i> AI Image Detector</h1>
+        <p class="subtitle">Загрузите изображение для определения AI-генерации</p>
+        
+        <div class="upload-area" onclick="document.getElementById('fileInput').click()">
+            <i class="fas fa-cloud-upload-alt" style="font-size: 60px; color: #667eea; margin-bottom: 20px;"></i>
+            <h3>Нажмите или перетащите изображение</h3>
+            <p>Поддерживаемые форматы: JPG, PNG, GIF, BMP, WEBP</p>
+            <p>Максимальный размер: 16MB</p>
+        </div>
+        
+        <input type="file" id="fileInput" accept="image/*">
+        <img id="preview" class="preview" alt="Preview">
+        
+        <div style="text-align: center;">
+            <button id="analyzeBtn" onclick="analyzeImage()" disabled>
+                <i class="fas fa-search"></i> Анализировать изображение
+            </button>
+        </div>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Анализируем изображение...</p>
+        </div>
+        
+        <div class="result" id="result">
+            <h3>Результат анализа</h3>
+            <div id="resultText"></div>
+            
+            <div class="progress-bar">
+                <div class="real-bar" id="realBar" style="width: 50%"></div>
+                <div class="ai-bar" id="aiBar" style="width: 50%"></div>
+            </div>
+            
+            <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                <span>Реальное: <strong id="realPercent">50%</strong></span>
+                <span>AI: <strong id="aiPercent">50%</strong></span>
+            </div>
+            
+            <div class="watermark" id="watermark"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 40px; color: #666;">
+            <p><a href="/docs" target="_blank" style="color: #667eea;">API Документация</a> | 
+               <a href="/health" target="_blank" style="color: #667eea;">Статус сервера</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            if (!file.type.startsWith('image/')) {
+                alert('Пожалуйста, выберите изображение');
+                return;
+            }
+            
+            if (file.size > 16 * 1024 * 1024) {
+                alert('Файл слишком большой (максимум 16MB)');
+                return;
+            }
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const preview = document.getElementById('preview');
+                preview.src = e.target.result;
+                preview.style.display = 'block';
+                document.getElementById('analyzeBtn').disabled = false;
+                document.getElementById('result').style.display = 'none';
+            };
+            reader.readAsDataURL(file);
+        });
+        
+        function analyzeImage() {
+            const fileInput = document.getElementById('fileInput');
+            const resultDiv = document.getElementById('result');
+            const loadingDiv = document.getElementById('loading');
+            
+            if (!fileInput.files[0]) {
+                alert('Пожалуйста, выберите изображение');
+                return;
+            }
+            
+            loadingDiv.style.display = 'block';
+            resultDiv.style.display = 'none';
+            
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+            
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.detail || 'Ошибка сервера');
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                
+                const realPercent = data.real_probability;
+                const aiPercent = data.ai_probability;
+                
+                document.getElementById('realPercent').textContent = realPercent + '%';
+                document.getElementById('aiPercent').textContent = aiPercent + '%';
+                document.getElementById('realBar').style.width = realPercent + '%';
+                document.getElementById('aiBar').style.width = aiPercent + '%';
+                
+                const resultText = document.getElementById('resultText');
+                const result = document.getElementById('result');
+                
+                if (data.is_real) {
+                    resultText.innerHTML = '<h2 style="color: #38a169;">✅ РЕАЛЬНОЕ ИЗОБРАЖЕНИЕ</h2>';
+                    result.className = 'result real';
+                } else {
+                    resultText.innerHTML = '<h2 style="color: #e53e3e;">⚠️ AI-ГЕНЕРАЦИЯ</h2>';
+                    result.className = 'result ai';
+                }
+                
+                document.getElementById('watermark').textContent = data.watermark;
+                document.getElementById('watermark').className = data.is_real ? 
+                    'watermark real' : 'watermark ai';
+                
+                result.style.display = 'block';
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                alert('Ошибка: ' + error.message);
+            });
+        }
+        
+        // Drag and drop
+        const uploadArea = document.querySelector('.upload-area');
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '#f0f0f0';
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.background = '';
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.background = '';
+            
+            const file = e.dataTransfer.files[0];
+            if (file) {
+                document.getElementById('fileInput').files = e.dataTransfer.files;
+                document.getElementById('fileInput').dispatchEvent(new Event('change'));
+            }
+        });
+    </script>
+</body>
+</html>
