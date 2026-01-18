@@ -119,4 +119,11 @@ async def health():
     return {"status": "online", "time": datetime.now().isoformat()}
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import subprocess
+    # Это заставит Python запустить файл бота в фоновом режиме
+    subprocess.Popen(["python", "bot.py"]) 
+    
+    # А это запустит твой сервер для Flutter
+    import uvicorn
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port)
