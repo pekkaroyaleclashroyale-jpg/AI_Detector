@@ -1,8 +1,9 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pillow>=11.3.0
-python-multipart==0.0.6
-numpy==1.24.0
-psutil==7.2.1
-transformers==4.35.2
-python-dotenv==1.0.1
+fastapi
+uvicorn
+python-dotenv
+python-telegram-bot
+requests
+aiosqlite
+torch
+transformers
+python-multipart
