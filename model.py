@@ -2,6 +2,7 @@ import torch
 from transformers import AutoImageProcessor, AutoModelForImageClassification
 from PIL import Image
 import torch.nn.functional as F
+import gc
 from datetime import datetime
 
 class AIDetectorModel:
@@ -14,7 +15,11 @@ class AIDetectorModel:
         try:
             # AutoImageProcessor и AutoModel сами подберут нужный конфиг (Swin/ViT)
             self.processor = AutoImageProcessor.from_pretrained(self.model_name)
-            self.model = AutoModelForImageClassification.from_pretrained(self.model_name)
+            self.model = AutoModelForImageClassification.from_pretrained(
+                self.model_name,
+                low_cpu_mem_usage=True,  # Экономит RAM при загрузке
+                torch_dtype=torch.float32 # Используем стандартный тип для CPU
+)
             self.model.eval()
             self.ready = True
             print("✅ Модель успешно загружена и готова!")
@@ -27,6 +32,7 @@ class AIDetectorModel:
             return self.fallback(image, "Модель не была загружена")
 
         try:
+            gc.collect()
             if image.mode != "RGB":
                 image = image.convert("RGB")
             
