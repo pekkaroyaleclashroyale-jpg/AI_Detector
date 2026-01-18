@@ -4,6 +4,7 @@ python-dotenv
 python-telegram-bot
 requests
 aiosqlite
-torch
+torch --index-url https://download.pytorch.org/whl/cpu
 transformers
 python-multipart
+numpy==1.26.4
